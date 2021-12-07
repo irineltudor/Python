@@ -63,7 +63,7 @@ class Game2048:
         self.display.fill(self.colors['back'])
         menu = self.font.render('Menu', True, (self.colors['text']))
         wasd = self.font.render('w,a,s,d - move the tiles', True, (self.colors['text']))
-        s = self.font.render('s - start', True, (self.colors['text']))
+        s = self.font.render('s - start/continue', True, (self.colors['text']))
         n = self.font.render('n - night mode on/off', True, (self.colors['text']))
         i = self.font.render('i - show the menu', True, (self.colors['text']))
         q = self.font.render('q - quit', True, (self.colors['text']))
@@ -94,8 +94,71 @@ class Game2048:
 
         pygame.display.flip()
 
+    def show_current_step(self):  # 0 - normal colors, 1 - night mode
+
+        self.display.fill(self.colors['back'])
+
+        text = self.font.render('Score : ' + str(self.score), True, (self.colors['text']))
+        text_rect = text.get_rect()
+        text_rect.center = (250, 75)
+        self.display.blit(text, text_rect)
+
+        text = self.font.render('Mode : ' + self.difficulty_levels[self.difficulty], True, (self.colors['text']))
+        text_rect = text.get_rect()
+        text_rect.center = (250, 110)
+        self.display.blit(text, text_rect)
+
+        for i in range(4):
+            for j in range(4):
+                x = self.matrix[i][j]
+
+                rect_x = j * self.weight // 4 + self.spacing
+                rect_y = i * self.height // 4 + self.spacing
+                rect_w = self.weight // 4 - 2 * self.spacing
+                rect_h = self.height // 4 - 2 * self.spacing
+
+                pygame.draw.rect(self.display,
+                                 self.colors[x],
+                                 pygame.Rect(rect_x + 50, rect_y + 150, rect_w, rect_h),
+                                 border_radius=8)
+                if x == 0:
+                    continue
+                text_surface = self.font.render(f'{x}', True, (0, 0, 0))
+                text_rect = text_surface.get_rect(center=(rect_x + 50 + rect_w / 2,
+                                                          rect_y + 150 + rect_h / 2))
+                self.display.blit(text_surface, text_rect)
+
+    @staticmethod
+    def wait_key():
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    return 'q'
+                if event.type == KEYDOWN:
+                    if event.key == K_UP:
+                        return 'u'
+                    elif event.key == K_DOWN:
+                        return 'd'
+                    elif event.key == K_LEFT:
+                        return 'l'
+                    elif event.key == K_RIGHT:
+                        return 'r'
+                    elif event.key == K_i:
+                        return 'i'
+                    elif event.key == K_n:
+                        return 'n'
+                    elif event.key == K_q:
+                        return 'q'
+
     def play(self):
         quit = self.show_menu()
+
+        while quit is False:
+            self.show_current_step()
+            pygame.display.flip()
+
+            key = self.wait_key()
+            print(key)
 
 
 if __name__ == '__main__':
