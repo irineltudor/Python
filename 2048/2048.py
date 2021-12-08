@@ -1,3 +1,4 @@
+import random
 from maincolors import *
 import pygame
 from pygame.locals import *
@@ -26,12 +27,45 @@ class Game2048:
 
         self.matrix = np.zeros((4, 4), dtype=int)
 
+    def sum(self, matrix):
+        s = 0
+        for i in matrix:
+            for j in range(len(i)):
+                s += i[j]
+        return s
+
     def nightmode_toggle(self):
         self.color_mode = (self.color_mode + 1) % 2
         if self.color_mode == 1:
             self.colors = nightmode_colors
         else:
             self.colors = normalmode_colors
+
+    def is_2048(self):
+        result = np.where(self.matrix == 2048)
+
+        if len(result[0]) > 0:
+            return True
+        return False
+
+    def game_over(self):
+        pygame.draw.rect(self.display,
+                         (191, 0, 0),
+                         pygame.Rect(125, 225, 250, 150),
+                         border_radius=8)
+
+        text = self.font.render('GAME OVER!', True, (self.colors['text']))
+        text_rect = text.get_rect()
+        text_rect.center = (250, 300)
+        self.display.blit(text, text_rect)
+
+        text = self.font.render('r - restart', True, (self.colors['text']))
+        text_rect = text.get_rect()
+        text_rect.center = (250, 330)
+        self.display.blit(text, text_rect)
+
+        self.is_over = 1
+        pygame.display.flip()
 
     @staticmethod
     def wait_start_key():
@@ -46,6 +80,18 @@ class Game2048:
                         return 'q'
                     elif event.key == K_n:
                         return 'n'
+
+    @staticmethod
+    def wait_restart_or_quit():
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    return 'q'
+                if event.type == KEYDOWN:
+                    if event.key == K_r:
+                        return 'a'
+                    elif event.key == K_q:
+                        return 'q'
 
     def show_menu(self):
         self.menu()
@@ -150,15 +196,47 @@ class Game2048:
                     elif event.key == K_q:
                         return 'q'
 
+    def insert_new(self, number_of_new):
+        number_of_new = number_of_new + self.difficulty * 1
+        free_i = list(zip(*np.where(self.matrix == 0)))
+        if len(free_i) < number_of_new:
+            number_of_new = len(free_i)
+
+        for i in random.sample(free_i, k=number_of_new):
+            if random.random() < (0.2 - 0.1 * self.difficulty):
+                self.matrix[i] = 4
+            else:
+                self.matrix[i] = 2
+
+        self.score = self.sum(self.matrix)
+
+    def move(self, key):  # work on current
+        self.score = self.sum(self.matrix)
+
     def play(self):
+        self.insert_new(2)
         quit = self.show_menu()
 
         while quit is False:
             self.show_current_step()
+            # self.game_over()
             pygame.display.flip()
 
             key = self.wait_key()
             print(key)
+
+            if key == 'q':
+                break
+            if key == 'n':
+                self.nightmode_toggle()
+                continue
+
+            if key == 'i':
+                quit = self.show_menu()
+                continue
+
+            self.move(key)
+            self.insert_new(1)
 
 
 if __name__ == '__main__':
