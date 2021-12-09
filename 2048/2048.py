@@ -26,6 +26,7 @@ class Game2048:
         self.display = pygame.display.set_mode((self.weight + 100, self.height + 200))
 
         self.matrix = np.zeros((4, 4), dtype=int)
+        self.possible_moves = ['u', 'd', 'l', 'r']
 
     def sum(self, matrix):
         s = 0
@@ -67,6 +68,25 @@ class Game2048:
         self.is_over = 1
         pygame.display.flip()
 
+    def over(self):
+        old_matrix = self.matrix.copy()
+        for move in self.possible_moves:
+            self.move(move)
+            if not all((self.matrix == old_matrix).flatten()):
+                self.matrix = old_matrix
+                return False
+
+        return True
+
+    def restart(self):
+        self.weight = 400
+        self.height = 400
+        self.spacing = 5
+        self.score = 0
+        self.is_over = 0
+        self.matrix = np.zeros((4, 4), dtype=int)
+        self.play()
+
     @staticmethod
     def wait_start_key():
         while True:
@@ -89,7 +109,7 @@ class Game2048:
                     return 'q'
                 if event.type == KEYDOWN:
                     if event.key == K_r:
-                        return 'a'
+                        return 'r'
                     elif event.key == K_q:
                         return 'q'
 
@@ -108,7 +128,7 @@ class Game2048:
     def menu(self):
         self.display.fill(self.colors['back'])
         menu = self.font.render('Menu', True, (self.colors['text']))
-        wasd = self.font.render('w,a,s,d - move the tiles', True, (self.colors['text']))
+        wasd = self.font.render('w,a,s,d or arrows - move the tiles', True, (self.colors['text']))
         s = self.font.render('s - start/continue', True, (self.colors['text']))
         n = self.font.render('n - night mode on/off', True, (self.colors['text']))
         i = self.font.render('i - show the menu', True, (self.colors['text']))
@@ -181,13 +201,13 @@ class Game2048:
                 if event.type == QUIT:
                     return 'q'
                 if event.type == KEYDOWN:
-                    if event.key == K_UP:
+                    if event.key == K_UP or event.key == K_w:
                         return 'u'
-                    elif event.key == K_DOWN:
+                    elif event.key == K_DOWN or event.key == K_s:
                         return 'd'
-                    elif event.key == K_LEFT:
+                    elif event.key == K_LEFT or event.key == K_a:
                         return 'l'
-                    elif event.key == K_RIGHT:
+                    elif event.key == K_RIGHT or event.key == K_d:
                         return 'r'
                     elif event.key == K_i:
                         return 'i'
@@ -210,7 +230,55 @@ class Game2048:
 
         self.score = self.sum(self.matrix)
 
+    @staticmethod
+    def get_sum(current, mirror):
+        current_sum = []
+        skip = False
+        if mirror:
+            current = current[::-1]
+        current_not_zeros = current[current != 0]
+        n = len(current_not_zeros)
+        j = 0
+
+        while j < n:
+            if skip:
+                skip = False
+                j += 1
+                continue
+            if j != n - 1 and current_not_zeros[j] == current_not_zeros[j + 1]:
+                new_n = current_not_zeros[j] * 2
+                skip = True
+            else:
+                new_n = current_not_zeros[j]
+
+            current_sum.append(new_n)
+            j += 1
+
+        return np.array(current_sum)
+
     def move(self, key):  # work on current
+        for i in range(4):
+            current = self.matrix[i, :]  # for left/right gets current line
+            if key == self.possible_moves[0] or key == self.possible_moves[1]:
+                current = self.matrix[:, i]  # for up/down gets current column
+
+            mirror = False
+            if key == self.possible_moves[1] or key == self.possible_moves[3]:
+                mirror = True
+            current_s = self.get_sum(current, mirror)
+
+            new = np.zeros_like(current)
+            new[:len(current_s)] = current_s
+
+            if mirror:
+                new = new[::-1]
+
+            if key == self.possible_moves[0] or key == self.possible_moves[1]:
+                self.matrix[:, i] = new
+            else:
+                self.matrix[i, :] = new
+
+        print(self.matrix)
         self.score = self.sum(self.matrix)
 
     def play(self):
@@ -219,14 +287,14 @@ class Game2048:
 
         while quit is False:
             self.show_current_step()
-            # self.game_over()
+            old_matrix = self.matrix.copy()
             pygame.display.flip()
 
             key = self.wait_key()
-            print(key)
 
             if key == 'q':
                 break
+
             if key == 'n':
                 self.nightmode_toggle()
                 continue
@@ -236,7 +304,19 @@ class Game2048:
                 continue
 
             self.move(key)
-            self.insert_new(1)
+            print(self.matrix)
+
+            if self.over():
+                self.game_over()
+                break
+
+            if not all((self.matrix == old_matrix).flatten()):
+                self.insert_new(1)
+
+        if self.is_over == 1:
+            key = self.wait_restart_or_quit()
+            if key == 'r':
+                self.restart()
 
 
 if __name__ == '__main__':
