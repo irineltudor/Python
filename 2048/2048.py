@@ -160,7 +160,7 @@ class Game2048:
 
         pygame.display.flip()
 
-    def show_current_step(self):  # 0 - normal colors, 1 - night mode
+    def show_current_step(self):
 
         self.display.fill(self.colors['back'])
 
@@ -218,15 +218,16 @@ class Game2048:
 
     def insert_new(self, number_of_new):
         number_of_new = number_of_new + self.difficulty * 1
-        free_i = list(zip(*np.where(self.matrix == 0)))
-        if len(free_i) < number_of_new:
-            number_of_new = len(free_i)
+        matrix_spaces = np.where(self.matrix == 0)
+        free_coordinates = list(zip(matrix_spaces[0], matrix_spaces[1]))
+        if len(free_coordinates) < number_of_new:
+            number_of_new = len(free_coordinates)
 
-        for i in random.sample(free_i, k=number_of_new):
+        for coordinates in random.sample(free_coordinates, number_of_new):
             if random.random() < (0.2 - 0.1 * self.difficulty):
-                self.matrix[i] = 4
+                self.matrix[coordinates] = 4
             else:
-                self.matrix[i] = 2
+                self.matrix[coordinates] = 2
 
         self.score = self.sum(self.matrix)
 
