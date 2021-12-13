@@ -114,6 +114,28 @@ class Game2048:
                     elif event.key == K_q:
                         return 'q'
 
+    @staticmethod
+    def wait_key():
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    return 'q'
+                if event.type == KEYDOWN:
+                    if event.key == K_UP or event.key == K_w:
+                        return 'u'
+                    elif event.key == K_DOWN or event.key == K_s:
+                        return 'd'
+                    elif event.key == K_LEFT or event.key == K_a:
+                        return 'l'
+                    elif event.key == K_RIGHT or event.key == K_d:
+                        return 'r'
+                    elif event.key == K_i:
+                        return 'i'
+                    elif event.key == K_n:
+                        return 'n'
+                    elif event.key == K_q:
+                        return 'q'
+
     def show_menu(self):
         self.menu()
         while True:
@@ -194,28 +216,6 @@ class Game2048:
                 text_rect = text_surface.get_rect(center=(rect_x + 50 + rect_w / 2,
                                                           rect_y + 150 + rect_h / 2))
                 self.display.blit(text_surface, text_rect)
-
-    @staticmethod
-    def wait_key():
-        while True:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    return 'q'
-                if event.type == KEYDOWN:
-                    if event.key == K_UP or event.key == K_w:
-                        return 'u'
-                    elif event.key == K_DOWN or event.key == K_s:
-                        return 'd'
-                    elif event.key == K_LEFT or event.key == K_a:
-                        return 'l'
-                    elif event.key == K_RIGHT or event.key == K_d:
-                        return 'r'
-                    elif event.key == K_i:
-                        return 'i'
-                    elif event.key == K_n:
-                        return 'n'
-                    elif event.key == K_q:
-                        return 'q'
 
     def insert_new(self, number_of_new):
         number_of_new = number_of_new + self.difficulty * 0.5  # number of new numbers that will be inserted ( 1 - Normal , 1 - Hard , 2 - VeryHard )
