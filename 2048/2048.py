@@ -1,3 +1,4 @@
+import math
 import random
 from maincolors import *
 import pygame
@@ -10,7 +11,7 @@ class Game2048:
     def __init__(self, difficulty):
         self.weight = 400
         self.height = 400
-        self.spacing = 5
+        self.spacing = 7
         self.difficulty = difficulty
         self.score = 0
         self.colors = normalmode_colors
@@ -176,20 +177,20 @@ class Game2048:
 
         for i in range(4):
             for j in range(4):
-                x = self.matrix[i][j]
+                value = self.matrix[i][j]
 
                 rect_x = j * self.weight // 4 + self.spacing
                 rect_y = i * self.height // 4 + self.spacing
-                rect_w = self.weight // 4 - 2 * self.spacing
-                rect_h = self.height // 4 - 2 * self.spacing
+                rect_w = self.weight // 4 - self.spacing
+                rect_h = self.height // 4 - self.spacing
 
                 pygame.draw.rect(self.display,
-                                 self.colors[x],
+                                 self.colors[value],
                                  pygame.Rect(rect_x + 50, rect_y + 150, rect_w, rect_h),
                                  border_radius=8)
-                if x == 0:
+                if value == 0:
                     continue
-                text_surface = self.font.render(f'{x}', True, (0, 0, 0))
+                text_surface = self.font.render(f'{value}', True, (0, 0, 0))
                 text_rect = text_surface.get_rect(center=(rect_x + 50 + rect_w / 2,
                                                           rect_y + 150 + rect_h / 2))
                 self.display.blit(text_surface, text_rect)
@@ -217,14 +218,15 @@ class Game2048:
                         return 'q'
 
     def insert_new(self, number_of_new):
-        number_of_new = number_of_new + self.difficulty * 1
+        number_of_new = number_of_new + self.difficulty * 0.5  # number of new numbers that will be inserted ( 1 - Normal , 1 - Hard , 2 - VeryHard )
+        number_of_new = int(math.floor(number_of_new))
         matrix_spaces = np.where(self.matrix == 0)
         free_coordinates = list(zip(matrix_spaces[0], matrix_spaces[1]))
         if len(free_coordinates) < number_of_new:
             number_of_new = len(free_coordinates)
 
         for coordinates in random.sample(free_coordinates, number_of_new):
-            if random.random() < (0.2 - 0.1 * self.difficulty):
+            if random.random() < (0.2 - 0.1 * self.difficulty):  # formula for chances , the chance to get a 2 on the board is determined by the difficulty level
                 self.matrix[coordinates] = 4
             else:
                 self.matrix[coordinates] = 2
@@ -232,11 +234,11 @@ class Game2048:
         self.score = self.sum(self.matrix)
 
     @staticmethod
-    def get_sum(current, mirror):
+    def get_sum(current, mirror):  # calculates the sum of the same numbers inside the vector from left to right
         current_sum = []
         skip = False
         if mirror:
-            current = current[::-1]
+            current = current[::-1]  # mirrors the vector
         current_not_zeros = current[current != 0]
         n = len(current_not_zeros)
         j = 0
@@ -257,7 +259,7 @@ class Game2048:
 
         return np.array(current_sum)
 
-    def move(self, key):  # work on current
+    def move(self, key):  # modify the matrix after the move
         for i in range(4):
             current = self.matrix[i, :]  # for left/right gets current line
             if key == self.possible_moves[0] or key == self.possible_moves[1]:
@@ -279,14 +281,13 @@ class Game2048:
             else:
                 self.matrix[i, :] = new
 
-        print(self.matrix)
         self.score = self.sum(self.matrix)
 
     def play(self):
         self.insert_new(2)
-        quit = self.show_menu()
+        is_quit = self.show_menu()
 
-        while quit is False:
+        while is_quit is False:
             self.show_current_step()
             old_matrix = self.matrix.copy()
             pygame.display.flip()
@@ -301,11 +302,11 @@ class Game2048:
                 continue
 
             if key == 'i':
-                quit = self.show_menu()
+                is_quit = self.show_menu()
                 continue
 
             self.move(key)
-            print(self.matrix)
+            # print(self.matrix)
 
             if self.over():
                 self.game_over()
@@ -320,11 +321,15 @@ class Game2048:
                 self.restart()
 
 
+def start_the_game(difficulty):
+    g = Game2048(difficulty)
+    g.play()
+
+
 if __name__ == '__main__':
     print(sys.argv)
     if len(sys.argv) == 2:
         difficulty = int(sys.argv[1])
     else:
         difficulty = 0
-    game = Game2048(difficulty)
-    game.play()
+    start_the_game(difficulty)
